@@ -1,12 +1,13 @@
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 import os
+import asyncio
 
 # Fungsi untuk memeriksa apakah file hanya berisi nomor kontak atau ada keywordnya
 def process_file(file_path):
     with open(file_path, 'r') as file:
         content = file.read()
-        # Contoh logika sederhana untuk mendeteksi keyword
+        # Logika untuk mendeteksi keyword
         if "BOSS" in content or "BABU" in content:
             return 'AutoDetectKeyword'
         else:
@@ -67,10 +68,21 @@ async def main():
     # Message handler untuk file yang dilampirkan
     application.add_handler(MessageHandler(filters.Document.ALL & filters.Document.MimeType("text/plain"), handle_document))
 
-    # Mulai bot
-    await application.start_polling()
-    await application.idle()
+    # Jalankan bot dengan polling
+    await application.initialize()
+    await application.start()
+    await application.updater.start_polling()
+    await application.updater.idle()
 
+# Pengecekan apakah event loop sudah berjalan
 if __name__ == '__main__':
-    import asyncio
-    asyncio.run(main())
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # Jika event loop sudah berjalan, gunakan event loop yang ada
+            loop.create_task(main())
+        else:
+            # Jika tidak ada event loop yang berjalan, buat event loop baru
+            asyncio.run(main())
+    except RuntimeError as e:
+        print(f"Error: {e}")
